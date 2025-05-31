@@ -1,0 +1,264 @@
+javascript:(function() {
+  // Fast execution - cache DOM elements and minimize searches
+  const startTime = performance.now();
+  
+  // Single DOM search cache
+  let allButtons = null;
+  let allSpans = null;
+  
+  function getButtons() {
+    if (!allButtons) {
+      allButtons = Array.from(document.querySelectorAll('button'));
+    }
+    return allButtons;
+  }
+  
+  function getSpans() {
+    if (!allSpans) {
+      allSpans = Array.from(document.querySelectorAll('span'));
+    }
+    return allSpans;
+  }
+  
+  // Fast feedback - only create when needed
+  function showFeedback(message, isError = false) {
+    const div = document.createElement('div');
+    div.textContent = message;
+    Object.assign(div.style, {
+      position: 'fixed',
+      top: '10px',
+      left: '10px',
+      padding: '8px 12px',
+      background: isError ? '#ff3333ee' : '#333333ee',
+      color: 'white',
+      borderRadius: '4px',
+      zIndex: '9999999',
+      fontSize: '14px',
+      maxWidth: '300px'
+    });
+    document.body.appendChild(div);
+    
+    setTimeout(() => {
+      div.style.opacity = '0';
+      div.style.transition = 'opacity 0.3s';
+      setTimeout(() => div.remove(), 300);
+    }, 2000);
+  }
+  
+  // Optimized favorite button finder
+  function findFavoriteButton() {
+    // Fast path: aria-label search first (most reliable, original version)
+    const buttons = getButtons();
+    
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      const ariaLabel = button.getAttribute('aria-label');
+      if (ariaLabel && ariaLabel.includes('Favorite')) {
+        return button;
+      }
+    }
+    
+    // Alternative version: data-e2e selector
+    const undefinedIconSpan = document.querySelector('span[data-e2e="undefined-icon"]');
+    if (undefinedIconSpan) {
+      return undefinedIconSpan.closest('button');
+    }
+    
+    // Fallback: SVG search (original version)
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      const use = button.querySelector('svg use');
+      if (use) {
+        const href = use.getAttribute('xlink:href');
+        if (href && (href.includes('collect') || href.includes('favorite'))) {
+          return button;
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  // Fast favorite status check
+  function isVideoFavorited(button) {
+    // Original version: aria-label check
+    const ariaLabel = button.getAttribute('aria-label') || '';
+    if (ariaLabel.includes('added to Favorites') || ariaLabel.includes('Remove from')) {
+      return true;
+    }
+    
+    // Check SVG use element for both versions
+    const use = button.querySelector('svg use');
+    if (use) {
+      const href = use.getAttribute('xlink:href') || '';
+      // Original version check
+      if (href.includes('uncollect') || href.includes('collected')) {
+        return true;
+      }
+      // Alternative version check - contains #favorite means it's favorited
+      if (href.includes('#favorite')) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  // Optimized like button finder
+  function findLikeButton() {
+    // Fast path: direct selector (original version)
+    const likeSpan = document.querySelector('span[data-e2e="like-icon"]');
+    if (likeSpan) {
+      return likeSpan.closest('button');
+    }
+    
+    // Alternative version selector
+    const browseLikeSpan = document.querySelector('span[data-e2e="browse-like-icon"]');
+    if (browseLikeSpan) {
+      return browseLikeSpan.closest('button');
+    }
+    
+    // Fallback: aria-label search
+    const buttons = getButtons();
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      const ariaLabel = button.getAttribute('aria-label');
+      if (ariaLabel && ariaLabel.includes('Like')) {
+        return button;
+      }
+    }
+    
+    return null;
+  }
+  
+  // Fast like status check
+  function isVideoLiked(button) {
+    return button.getAttribute('aria-pressed') === 'true';
+  }
+  
+  // Optimized previous button finder
+  function findPreviousButton() {
+    // Fast path: TUXButton with specific path
+    const tuxButtons = document.querySelectorAll('button.TUXButton');
+    for (let i = 0; i < tuxButtons.length; i++) {
+      const button = tuxButtons[i];
+      const path = button.querySelector('svg path');
+      if (path && path.getAttribute('d') && path.getAttribute('d').includes('m24 20.24')) {
+        return button;
+      }
+    }
+    
+    // Fallback: data-e2e
+    const arrowButton = document.querySelector('button[data-e2e="arrow-left"]');
+    if (arrowButton) {
+      return arrowButton;
+    }
+    
+    // Last resort: SVG pattern search
+    const buttons = getButtons();
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      const path = button.querySelector('svg path');
+      if (path) {
+        const d = path.getAttribute('d') || '';
+        if (d.includes('13.17 13.17') && d.includes('24 20.24')) {
+          return button;
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  // Optimized forward button finder
+  function findForwardButton() {
+    // Fast path: TUXButton with specific path
+    const tuxButtons = document.querySelectorAll('button.TUXButton');
+    for (let i = 0; i < tuxButtons.length; i++) {
+      const button = tuxButtons[i];
+      const path = button.querySelector('svg path');
+      if (path && path.getAttribute('d') && path.getAttribute('d').includes('m24 27.76')) {
+        return button;
+      }
+    }
+    
+    // Fallback: data-e2e
+    const arrowButton = document.querySelector('button[data-e2e="arrow-right"]');
+    if (arrowButton) {
+      return arrowButton;
+    }
+    
+    // Last resort: SVG pattern search
+    const buttons = getButtons();
+    for (let i = 0; i < buttons.length; i++) {
+      const button = buttons[i];
+      const path = button.querySelector('svg path');
+      if (path) {
+        const d = path.getAttribute('d') || '';
+        if (d.includes('13.17-13.17') && d.includes('24 27.76')) {
+          return button;
+        }
+      }
+    }
+    
+    return null;
+  }
+  
+  // Check if button is disabled
+  function isButtonDisabled(button) {
+    return button.hasAttribute('disabled');
+  }
+  
+  // Main execution - optimized flow
+  console.log('TikTok Bookmarklet: Starting...');
+  
+  // Step 1: Find and validate favorite button (fast)
+  const favoriteButton = findFavoriteButton();
+  if (!favoriteButton) {
+    showFeedback('Favorite button not found', true);
+    return;
+  }
+  
+  if (!isVideoFavorited(favoriteButton)) {
+    showFeedback('Video is not favorited', true);
+    return;
+  }
+  
+  // Step 2: Find navigation buttons upfront (parallel preparation)
+  const likeButton = findLikeButton();
+  const forwardButton = findForwardButton();
+  const prevButton = findPreviousButton();
+  
+  // Step 3: Determine navigation button to use (forward button is default)
+  let navigationButton = null;
+  if (forwardButton) {
+    navigationButton = forwardButton;
+  } else if (prevButton) {
+    navigationButton = prevButton;
+  } else {
+    console.error('TikTok Bookmarklet: No available navigation button found');
+    showFeedback('No navigation button available', true);
+    return;
+  }
+  
+  // Step 4: Execute workflow with minimal delays
+  console.log('TikTok Bookmarklet: Executing workflow...');
+  
+  // Unfavorite immediately
+  favoriteButton.click();
+  
+  // Like if needed (fast check)
+  if (likeButton && !isVideoLiked(likeButton)) {
+    // Very short delay to allow unfavorite to register
+    setTimeout(() => likeButton.click(), 50);
+  }
+  
+  // Navigate with minimal delay
+  setTimeout(() => {
+    navigationButton.click();
+    const elapsed = Math.round(performance.now() - startTime);
+    console.log(`TikTok Bookmarklet: Completed in ${elapsed}ms`);
+    showFeedback(`Completed in ${elapsed}ms`);
+  }, 100);
+})();
+
